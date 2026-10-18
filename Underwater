@@ -1,0 +1,176 @@
+// fish 1 follows the mouse
+let fishX = 300;
+let fishY = 200;
+let fishDir = 1;
+
+// fish 2 swims across the screen by itself
+let fish2X = 100;
+let fish2Y = 120;
+
+// jellyfish positions and sizes
+let jellyX = [100, 250, 420, 540];
+let jellyY = [250, 120, 280, 150];
+let jellySize = [45, 60, 50, 40];
+
+function setup() {
+  createCanvas(600, 400);
+}
+
+function draw() {
+  drawWater();
+
+  // same function, different x, height and color each time
+  drawSeaweed(30, 110, color(30, 160, 70));
+  drawSeaweed(120, 150, color(20, 140, 90));
+  drawSeaweed(220, 95, color(60, 170, 60));
+  drawSeaweed(330, 140, color(25, 150, 80));
+  drawSeaweed(430, 105, color(40, 180, 90));
+  drawSeaweed(530, 160, color(20, 130, 70));
+  drawSeaweed(580, 100, color(50, 165, 75));
+
+  for (let i = 0; i < 4; i++) {
+    moveJellyfish(i);
+    drawJellyfish(jellyX[i], jellyY[i], jellySize[i]);
+  }
+
+  // two fish, same function with different arguments
+  moveFish();
+  drawFish(fishX, fishY, 80, fishDir, color(255, 150, 20));
+
+  swimAcross();
+  drawFish(fish2X, fish2Y, 55, 1, color(255, 90, 140));
+}
+
+// draws the blue water and the sand at the bottom
+function drawWater() {
+  background(90, 200, 245);
+  noStroke();
+  fill(240, 220, 160);
+  rect(0, height - 30, width, 30);
+}
+
+// draws one piece of seaweed with a stem and leaves on both sides
+// x = where it starts, h = how tall it is, c = its color
+function drawSeaweed(x, h, c) {
+  let baseY = height - 30;   // the seaweed starts on the sand
+
+  // stem
+  noFill();
+  stroke(c);
+  strokeWeight(5);
+  beginShape();
+  for (let i = 0; i <= h; i += 10) {
+    vertex(x + getSway(i, x), baseY - i);
+  }
+  endShape();
+
+  // leaves, one on the left then one on the right
+  noStroke();
+  fill(c);
+  let side = 1;
+  for (let i = 20; i < h; i += 22) {
+    push();
+    translate(x + getSway(i, x), baseY - i);
+    rotate(side * -PI / 4);
+    ellipse(side * 11, 0, 24, 9);
+    pop();
+    side = side * -1; 
+  }
+
+  // round tip at the top
+  ellipse(x + getSway(h, x), baseY - h, 10);
+}
+
+// figures out how far a part of the seaweed moves sideways
+function getSway(heightAbove, x) {
+  let strength = heightAbove * 0.15;
+  return sin(frameCount * 0.03 + x) * strength;
+}
+
+// draws one jellyfish
+function drawJellyfish(x, y, size) {
+  // tentacles
+  stroke(255, 150, 220);
+  strokeWeight(2);
+  for (let i = 0; i < 5; i++) {
+    let tx = x - size / 2 + i * (size / 4);
+    let wiggle = sin(frameCount * 0.05 + i) * 5;
+    line(tx, y, tx + wiggle, y + size);
+  }
+
+  // head
+  stroke(255);
+  strokeWeight(1);
+  fill(255, 160, 230, 200);
+  arc(x, y, size, size, PI, TWO_PI);
+}
+
+// gives back a small up and down number for jellyfish number i
+function getBob(i) {
+  return sin(frameCount * 0.05 + i) * 0.8;
+}
+
+// moves jellyfish number i up slowly, bobbing a bit
+function moveJellyfish(i) {
+  let bob = getBob(i);
+  jellyY[i] = jellyY[i] - 0.4 + bob;
+
+  // if it goes off the top, put it back at the bottom
+  if (jellyY[i] < -jellySize[i]) {
+    jellyY[i] = height + 20;
+  }
+}
+
+// draws a fish at x, y
+// size = body length, dir = 1 or -1 (which way it faces), c = body color
+function drawFish(x, y, size, dir, c) {
+  let tailWiggle = sin(frameCount * 0.2) * size * 0.1;
+
+  push();
+  translate(x, y);
+  scale(dir, 1);   // flips the fish if it faces left
+  noStroke();
+
+  // tail
+  fill(c);
+  triangle(-size * 0.4, 0, -size * 0.85, -size * 0.3 + tailWiggle,
+           -size * 0.85, size * 0.3 + tailWiggle);
+
+  // body
+  ellipse(0, 0, size, size * 0.6);
+
+  // stripe
+  fill(255);
+  ellipse(0, 0, size * 0.08, size * 0.4);
+
+  // eye
+  ellipse(size * 0.3, -size * 0.06, size * 0.14);
+  fill(0);
+  ellipse(size * 0.32, -size * 0.06, size * 0.07);
+  pop();
+}
+
+// makes fish 1 swim slowly toward the mouse
+function moveFish() {
+  if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+    if (mouseX > fishX) {
+      fishDir = 1;
+    } else {
+      fishDir = -1;
+    }
+    fishX = fishX + (mouseX - fishX) * 0.03;
+    fishY = fishY + (mouseY - fishY) * 0.03;
+  }
+}
+
+// makes fish 2 swim to the right in a wavy line,
+// then come back from the left side
+function swimAcross() {
+  let wave = sin(frameCount * 0.03) * 30;
+  fish2X = fish2X + 1.5;
+  fish2Y = 120 + wave;
+
+  if (fish2X > width + 60) {
+    fish2X = -60;
+  }
+}
